@@ -86,7 +86,7 @@ export function lexicographicSortSchema(schema: GraphQLSchema): GraphQLSchema {
     });
   }
 
-  function sortArgs(args: GraphQLFieldConfigArgumentMap) {
+  function sortArgs(args: GraphQLFieldConfigArgumentMap<unknown, unknown>) {
     return sortObjMap(args, (arg) => ({
       ...arg,
       type: replaceType(arg.type),

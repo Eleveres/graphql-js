@@ -795,14 +795,15 @@ function defineFieldMap<TSource, TContext>(
   });
 }
 
-export function defineArguments(
-  config: GraphQLFieldConfigArgumentMap,
-): ReadonlyArray<GraphQLArgument> {
+export function defineArguments<TSource, TContext>(
+  config: GraphQLFieldConfigArgumentMap<TSource, TContext>,
+): ReadonlyArray<GraphQLArgument<TSource, TContext>> {
   return Object.entries(config).map(([argName, argConfig]) => ({
     name: assertName(argName),
     description: argConfig.description,
     type: argConfig.type,
     defaultValue: argConfig.defaultValue,
+    resolve: argConfig.resolve,
     deprecationReason: argConfig.deprecationReason,
     extensions: toObjMap(argConfig.extensions),
     astNode: argConfig.astNode,
@@ -827,9 +828,9 @@ function fieldsToFieldsConfig<TSource, TContext>(
 /**
  * @internal
  */
-export function argsToArgsConfig(
-  args: ReadonlyArray<GraphQLArgument>,
-): GraphQLFieldConfigArgumentMap {
+export function argsToArgsConfig<TSource, TContext>(
+  args: ReadonlyArray<GraphQLArgument<TSource, TContext>>,
+): GraphQLFieldConfigArgumentMap<TSource, TContext> {
   return keyValMap(
     args,
     (arg) => arg.name,
@@ -837,6 +838,7 @@ export function argsToArgsConfig(
       description: arg.description,
       type: arg.type,
       defaultValue: arg.defaultValue,
+      resolve: arg.resolve,
       deprecationReason: arg.deprecationReason,
       extensions: arg.extensions,
       astNode: arg.astNode,
@@ -888,6 +890,11 @@ export type GraphQLFieldResolver<
   info: GraphQLResolveInfo,
 ) => TResult;
 
+export type GraphQLArgumentResolver<TSource, TContext, TResult = unknown> = (
+  source: TSource,
+  context: TContext,
+) => TResult;
+
 export interface GraphQLResolveInfo {
   readonly fieldName: string;
   readonly fieldNodes: ReadonlyArray<FieldNode>;
@@ -920,7 +927,7 @@ export interface GraphQLFieldExtensions<_TSource, _TContext, _TArgs = any> {
 export interface GraphQLFieldConfig<TSource, TContext, TArgs = any> {
   description?: Maybe<string>;
   type: GraphQLOutputType;
-  args?: GraphQLFieldConfigArgumentMap | undefined;
+  args?: GraphQLFieldConfigArgumentMap<TSource, TContext> | undefined;
   resolve?: GraphQLFieldResolver<TSource, TContext, TArgs> | undefined;
   subscribe?: GraphQLFieldResolver<TSource, TContext, TArgs> | undefined;
   deprecationReason?: Maybe<string>;
@@ -930,7 +937,9 @@ export interface GraphQLFieldConfig<TSource, TContext, TArgs = any> {
   astNode?: Maybe<FieldDefinitionNode>;
 }
 
-export type GraphQLFieldConfigArgumentMap = ObjMap<GraphQLArgumentConfig>;
+export type GraphQLFieldConfigArgumentMap<TSource, TContext> = ObjMap<
+  GraphQLArgumentConfig<TSource, TContext>
+>;
 
 /**
  * Custom extensions
@@ -945,10 +954,11 @@ export interface GraphQLArgumentExtensions {
   [attributeName: string]: unknown;
 }
 
-export interface GraphQLArgumentConfig {
+export interface GraphQLArgumentConfig<TSource, TContext> {
   description?: Maybe<string>;
   type: GraphQLInputType;
   defaultValue?: unknown;
+  resolve?: GraphQLArgumentResolver<TSource, TContext> | undefined;
   deprecationReason?: Maybe<string>;
   extensions?: Maybe<Readonly<GraphQLArgumentExtensions>>;
   astNode?: Maybe<InputValueDefinitionNode>;
@@ -962,7 +972,7 @@ export interface GraphQLField<TSource, TContext, TArgs = any> {
   name: string;
   description: Maybe<string>;
   type: GraphQLOutputType;
-  args: ReadonlyArray<GraphQLArgument>;
+  args: ReadonlyArray<GraphQLArgument<TSource, TContext>>;
   resolve?: GraphQLFieldResolver<TSource, TContext, TArgs> | undefined;
   subscribe?: GraphQLFieldResolver<TSource, TContext, TArgs> | undefined;
   deprecationReason: Maybe<string>;
@@ -970,17 +980,20 @@ export interface GraphQLField<TSource, TContext, TArgs = any> {
   astNode: Maybe<FieldDefinitionNode>;
 }
 
-export interface GraphQLArgument {
+export interface GraphQLArgument<TSource, TContext> {
   name: string;
   description: Maybe<string>;
   type: GraphQLInputType;
   defaultValue: unknown;
+  resolve?: GraphQLArgumentResolver<TSource, TContext> | undefined;
   deprecationReason: Maybe<string>;
   extensions: Readonly<GraphQLArgumentExtensions>;
   astNode: Maybe<InputValueDefinitionNode>;
 }
 
-export function isRequiredArgument(arg: GraphQLArgument): boolean {
+export function isRequiredArgument<TSource, TContext>(
+  arg: GraphQLArgument<TSource, TContext>,
+): boolean {
   return isNonNullType(arg.type) && arg.defaultValue === undefined;
 }
 

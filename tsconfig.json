@@ -33,7 +33,8 @@
     "noUncheckedIndexedAccess": false, // FIXME
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "allowJs": true
   },
   "ts-node": {
     "esm": true

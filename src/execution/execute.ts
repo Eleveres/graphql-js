@@ -133,11 +133,16 @@ export interface ExecutionContext {
  *   - `extensions` is reserved for adding non-standard properties.
  *   - `incremental` is a list of the results from defer/stream directives.
  */
+
+interface GraphQLEnhancedError extends GraphQLError {
+  fields?: Array<string>;
+}
+
 export interface ExecutionResult<
   TData = ObjMap<unknown>,
   TExtensions = ObjMap<unknown>,
 > {
-  errors?: ReadonlyArray<GraphQLError>;
+  errors?: ReadonlyArray<GraphQLEnhancedError>;
   data?: TData | null;
   extensions?: TExtensions;
 }
@@ -670,6 +675,94 @@ function executeFields(
  * calling its resolve function, then calls completeValue to complete promises,
  * serialize scalars, or execute the sub-selection-set for objects.
  */
+// function executeField(
+//   exeContext: ExecutionContext,
+//   parentType: GraphQLObjectType,
+//   source: unknown,
+//   fieldNodes: ReadonlyArray<FieldNode>,
+//   path: Path,
+//   asyncPayloadRecord?: AsyncPayloadRecord,
+// ): PromiseOrValue<unknown> {
+//   const errors = asyncPayloadRecord?.errors ?? exeContext.errors;
+//   const fieldName = fieldNodes[0].name.value;
+//   const fieldDef = exeContext.schema.getField(parentType, fieldName);
+//   if (!fieldDef) {
+//     return;
+//   }
+
+//   const returnType = fieldDef.type;
+//   const resolveFn = fieldDef.resolve ?? exeContext.fieldResolver;
+
+//   const info = buildResolveInfo(
+//     exeContext,
+//     fieldDef,
+//     fieldNodes,
+//     parentType,
+//     path,
+//   );
+
+//   // Get the resolve function, regardless of if its result is normal or abrupt (error).
+//   try {
+//     // Build a JS object of arguments from the field.arguments AST, using the
+//     // variables scope to fulfill any variable references.
+//     // TODO: find a way to memoize, in case this field is within a List type.
+//     const args = getArgumentValues(
+//       fieldDef,
+//       fieldNodes[0],
+//       exeContext.variableValues,
+//     );
+
+//     // The resolve function's optional third argument is a context value that
+//     // is provided to every resolve function within an execution. It is commonly
+//     // used to represent an authenticated user, or request-specific caches.
+//     const contextValue = exeContext.contextValue;
+
+//     const result = resolveFn(source, args, contextValue, info);
+
+//     let completed;
+//     if (isPromise(result)) {
+//       completed = result.then((resolved) =>
+//         completeValue(
+//           exeContext,
+//           returnType,
+//           fieldNodes,
+//           info,
+//           path,
+//           resolved,
+//           asyncPayloadRecord,
+//         ),
+//       );
+//     } else {
+//       completed = completeValue(
+//         exeContext,
+//         returnType,
+//         fieldNodes,
+//         info,
+//         path,
+//         result,
+//         asyncPayloadRecord,
+//       );
+//     }
+
+//     if (isPromise(completed)) {
+//       // Note: we don't rely on a `catch` method, but we do expect "thenable"
+//       // to take a second callback for the error case.
+//       return completed.then(undefined, (rawError) => {
+//         const error = locatedError(rawError, fieldNodes, pathToArray(path));
+//         const handledError = handleFieldError(error, returnType, errors);
+//         filterSubsequentPayloads(exeContext, path, asyncPayloadRecord);
+//         return handledError;
+//       });
+//     }
+//     return completed;
+//   } catch (rawError) {
+//     const error = locatedError(rawError, fieldNodes, pathToArray(path));
+//     const handledError = handleFieldError(error, returnType, errors);
+//     filterSubsequentPayloads(exeContext, path, asyncPayloadRecord);
+//     return handledError;
+//   }
+// }
+
 function executeField(
   exeContext: ExecutionContext,
   parentType: GraphQLObjectType,
@@ -712,49 +805,70 @@ function executeField(
     // used to represent an authenticated user, or request-specific caches.
     const contextValue = exeContext.contextValue;
 
-    const result = resolveFn(source, args, contextValue, info);
+    return executeArgs(fieldDef, args, contextValue)
+      .then(() => {
+        const result = resolveFn(source, args, contextValue, info);
 
-    let completed;
-    if (isPromise(result)) {
-      completed = result.then((resolved) =>
-        completeValue(
-          exeContext,
-          returnType,
-          fieldNodes,
-          info,
-          path,
-          resolved,
-          asyncPayloadRecord,
-        ),
-      );
-    } else {
-      completed = completeValue(
-        exeContext,
-        returnType,
-        fieldNodes,
-        info,
-        path,
-        result,
-        asyncPayloadRecord,
-      );
-    }
+        let completed;
+        if (isPromise(result)) {
+          completed = result.then((resolved) =>
+            completeValue(
+              exeContext,
+              returnType,
+              fieldNodes,
+              info,
+              path,
+              resolved,
+              asyncPayloadRecord,
+            ),
+          );
+        } else {
+          completed = completeValue(
+            exeContext,
+            returnType,
+            fieldNodes,
+            info,
+            path,
+            result,
+            asyncPayloadRecord,
+          );
+        }
 
-    if (isPromise(completed)) {
-      // Note: we don't rely on a `catch` method, but we do expect "thenable"
-      // to take a second callback for the error case.
-      return completed.then(undefined, (rawError) => {
+        if (isPromise(completed)) {
+          // Note: we don't rely on a `catch` method, but we do expect "thenable"
+          // to take a second callback for the error case.
+          return completed.then(undefined, (rawError) => {
+            const error = locatedError(rawError, fieldNodes, pathToArray(path));
+            const handledError = handleFieldError(error, returnType, errors);
+            filterSubsequentPayloads(exeContext, path, asyncPayloadRecord);
+            return handledError;
+          });
+        }
+        return completed;
+      })
+      .catch((rawError: any) => {
         const error = locatedError(rawError, fieldNodes, pathToArray(path));
         const handledError = handleFieldError(error, returnType, errors);
         filterSubsequentPayloads(exeContext, path, asyncPayloadRecord);
         return handledError;
       });
-    }
-    return completed;
   } catch (rawError) {
     const error = locatedError(rawError, fieldNodes, pathToArray(path));
     const handledError = handleFieldError(error, returnType, errors);
     filterSubsequentPayloads(exeContext, path, asyncPayloadRecord);
     return handledError;
+  }
+}
+
+async function executeArgs(
+  fieldDef: GraphQLField<unknown, unknown>,
+  args: { [argument: string]: unknown },
+  contextValue: unknown,
+) {
+  for (const argDef of fieldDef.args) {
+    if (argDef.resolve) {
+      await argDef.resolve(args[argDef.name], contextValue);
+    }
   }
 }
 

@@ -231,6 +231,7 @@ describe('Type System: Objects', () => {
             description: undefined,
             type: ScalarType,
             defaultValue: undefined,
+            resolve: undefined,
             deprecationReason: undefined,
             extensions: {},
             astNode: undefined,

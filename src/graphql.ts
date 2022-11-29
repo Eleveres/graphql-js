@@ -1,6 +1,6 @@
 import { isPromise } from './jsutils/isPromise.js';
 import type { Maybe } from './jsutils/Maybe.js';
-import type { PromiseOrValue } from './jsutils/PromiseOrValue.js';
+// import type { PromiseOrValue } from './jsutils/PromiseOrValue.js';
 
 import { parse } from './language/parser.js';
 import type { Source } from './language/source.js';
@@ -16,6 +16,9 @@ import { validate } from './validation/validate.js';
 
 import type { ExecutionResult } from './execution/execute.js';
 import { execute } from './execution/execute.js';
+
+import { parseScopes } from './permissions/parser.js';
+import { validatePermissions } from './permissions/permissions.js';
 
 /**
  * This is the primary entry point function for fulfilling GraphQL operations
@@ -67,6 +70,8 @@ export interface GraphQLArgs {
   operationName?: Maybe<string>;
   fieldResolver?: Maybe<GraphQLFieldResolver<any, any>>;
   typeResolver?: Maybe<GraphQLTypeResolver<any, any>>;
+  permissions?: Maybe<any>;
+  rateLimits?: Maybe<any>;
 }
 
 export function graphql(args: GraphQLArgs): Promise<ExecutionResult> {
@@ -91,7 +96,7 @@ export function graphqlSync(args: GraphQLArgs): ExecutionResult {
   return result;
 }
 
-function graphqlImpl(args: GraphQLArgs): PromiseOrValue<ExecutionResult> {
+function graphqlImpl(args: GraphQLArgs): any {
   const {
     schema,
     source,
@@ -101,6 +106,8 @@ function graphqlImpl(args: GraphQLArgs): PromiseOrValue<ExecutionResult> {
     operationName,
     fieldResolver,
     typeResolver,
+    permissions,
+    rateLimits,
   } = args;
 
   // Validate Schema
@@ -115,6 +122,53 @@ function graphqlImpl(args: GraphQLArgs): PromiseOrValue<ExecutionResult> {
     document = parse(source);
   } catch (syntaxError) {
     return { errors: [syntaxError] };
+  }
+
+  if (rateLimits !== undefined) {
+    const rateLimitsErrors = [];
+    const definition: any = document.definitions[0];
+    for (const selection of definition.selectionSet.selections) {
+      if (
+        rateLimits.rateLimiter.check(rateLimits.ip, selection.name.value) ===
+        false
+      ) {
+        rateLimitsErrors.push(selection.name.value);
+      }
+    }
+    if (rateLimitsErrors.length > 0) {
+      return {
+        errors: [
+          {
+            message: 'RateLimited',
+            fields: rateLimitsErrors,
+          },
+        ],
+      };
+    }
+  }
+  if (permissions !== undefined) {
+    permissions.ctx = contextValue;
+    const requestedScopes = parseScopes(
+      document,
+      schema,
+      operationName,
+      variableValues,
+    );
+    const permissionsErrors = validatePermissions(
+      permissions.permissions,
+      requestedScopes,
+      permissions.opt,
+    );
+    if (permissionsErrors.length > 0) {
+      return {
+        errors: [
+          {
+            message: 'PermissionDenied',
+            fields: permissionsErrors,
+          },
+        ],
+      };
+    }
   }
 
   // Validate

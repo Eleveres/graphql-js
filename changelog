@@ -1,0 +1,11 @@
+graphql.ts
+	2 new parameters to graphqlImpl (permissions & rateLimits)
+	few any tweaks to make it work
+
+execution/execute.ts
+	new function executeArgs
+	executeField now calls executeArgs and returns the result
+
+type/definition.ts
+	'resolve' field added to defineArguments and argsToArgsConfig 
+

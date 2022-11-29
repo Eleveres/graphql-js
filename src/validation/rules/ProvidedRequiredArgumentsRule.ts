@@ -66,7 +66,7 @@ export function ProvidedRequiredArgumentsOnDirectivesRule(
   context: ValidationContext | SDLValidationContext,
 ): ASTVisitor {
   const requiredArgsMap: ObjMap<
-    ObjMap<GraphQLArgument | InputValueDefinitionNode>
+    ObjMap<GraphQLArgument<unknown, unknown> | InputValueDefinitionNode>
   > = Object.create(null);
 
   const schema = context.getSchema();

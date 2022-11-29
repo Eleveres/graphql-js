@@ -55,7 +55,7 @@ export class GraphQLDirective {
   name: string;
   description: Maybe<string>;
   locations: ReadonlyArray<DirectiveLocation>;
-  args: ReadonlyArray<GraphQLArgument>;
+  args: ReadonlyArray<GraphQLArgument<unknown, unknown>>;
   isRepeatable: boolean;
   extensions: Readonly<GraphQLDirectiveExtensions>;
   astNode: Maybe<DirectiveDefinitionNode>;
@@ -101,14 +101,14 @@ export interface GraphQLDirectiveConfig {
   name: string;
   description?: Maybe<string>;
   locations: ReadonlyArray<DirectiveLocation>;
-  args?: Maybe<GraphQLFieldConfigArgumentMap>;
+  args?: Maybe<GraphQLFieldConfigArgumentMap<unknown, unknown>>;
   isRepeatable?: Maybe<boolean>;
   extensions?: Maybe<Readonly<GraphQLDirectiveExtensions>>;
   astNode?: Maybe<DirectiveDefinitionNode>;
 }
 
 interface GraphQLDirectiveNormalizedConfig extends GraphQLDirectiveConfig {
-  args: GraphQLFieldConfigArgumentMap;
+  args: GraphQLFieldConfigArgumentMap<unknown, unknown>;
   isRepeatable: boolean;
   extensions: Readonly<GraphQLDirectiveExtensions>;
 }

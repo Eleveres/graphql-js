@@ -427,7 +427,7 @@ export function extendSchemaImpl(
     };
   }
 
-  function extendArg(arg: GraphQLArgumentConfig) {
+  function extendArg(arg: GraphQLArgumentConfig<unknown, unknown>) {
     return {
       ...arg,
       type: replaceType(arg.type),
@@ -522,7 +522,7 @@ export function extendSchemaImpl(
 
   function buildArgumentMap(
     args: Maybe<ReadonlyArray<InputValueDefinitionNode>>,
-  ): GraphQLFieldConfigArgumentMap {
+  ): GraphQLFieldConfigArgumentMap<unknown, unknown> {
     // FIXME: https://github.com/graphql/graphql-js/issues/2203
     const argsNodes = /* c8 ignore next */ args ?? [];
 
