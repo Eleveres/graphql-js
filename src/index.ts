@@ -490,3 +490,5 @@ export type {
   DangerousChange,
   TypedQueryDocumentNode,
 } from './utilities/index.js';
+
+export * from './rateLimiter/rateLimiter.js';
