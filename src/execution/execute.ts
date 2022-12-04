@@ -867,7 +867,11 @@ async function executeArgs(
 ) {
   for (const argDef of fieldDef.args) {
     if (argDef.resolve) {
-      await argDef.resolve(args[argDef.name], contextValue);
+      if (isPromise(argDef.resolve)) {
+        await argDef.resolve(args[argDef.name], contextValue);
+      } else {
+        argDef.resolve(args[argDef.name], contextValue);
+      }
     }
   }
 }

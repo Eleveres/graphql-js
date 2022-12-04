@@ -795,9 +795,9 @@ function defineFieldMap<TSource, TContext>(
   });
 }
 
-export function defineArguments<TSource, TContext>(
-  config: GraphQLFieldConfigArgumentMap<TSource, TContext>,
-): ReadonlyArray<GraphQLArgument<TSource, TContext>> {
+export function defineArguments<TContext>(
+  config: GraphQLFieldConfigArgumentMap<TContext>,
+): ReadonlyArray<GraphQLArgument<TContext>> {
   return Object.entries(config).map(([argName, argConfig]) => ({
     name: assertName(argName),
     description: argConfig.description,
@@ -828,9 +828,9 @@ function fieldsToFieldsConfig<TSource, TContext>(
 /**
  * @internal
  */
-export function argsToArgsConfig<TSource, TContext>(
-  args: ReadonlyArray<GraphQLArgument<TSource, TContext>>,
-): GraphQLFieldConfigArgumentMap<TSource, TContext> {
+export function argsToArgsConfig<TContext>(
+  args: ReadonlyArray<GraphQLArgument<TContext>>,
+): GraphQLFieldConfigArgumentMap<TContext> {
   return keyValMap(
     args,
     (arg) => arg.name,
@@ -890,8 +890,8 @@ export type GraphQLFieldResolver<
   info: GraphQLResolveInfo,
 ) => TResult;
 
-export type GraphQLArgumentResolver<TSource, TContext, TResult = unknown> = (
-  source: TSource,
+export type GraphQLArgumentResolver<TContext, TResult = unknown> = (
+  source: any,
   context: TContext,
 ) => TResult;
 
@@ -927,7 +927,7 @@ export interface GraphQLFieldExtensions<_TSource, _TContext, _TArgs = any> {
 export interface GraphQLFieldConfig<TSource, TContext, TArgs = any> {
   description?: Maybe<string>;
   type: GraphQLOutputType;
-  args?: GraphQLFieldConfigArgumentMap<TSource, TContext> | undefined;
+  args?: GraphQLFieldConfigArgumentMap<TContext> | undefined;
   resolve?: GraphQLFieldResolver<TSource, TContext, TArgs> | undefined;
   subscribe?: GraphQLFieldResolver<TSource, TContext, TArgs> | undefined;
   deprecationReason?: Maybe<string>;
@@ -937,8 +937,8 @@ export interface GraphQLFieldConfig<TSource, TContext, TArgs = any> {
   astNode?: Maybe<FieldDefinitionNode>;
 }
 
-export type GraphQLFieldConfigArgumentMap<TSource, TContext> = ObjMap<
-  GraphQLArgumentConfig<TSource, TContext>
+export type GraphQLFieldConfigArgumentMap<TContext> = ObjMap<
+  GraphQLArgumentConfig<TContext>
 >;
 
 /**
@@ -954,11 +954,11 @@ export interface GraphQLArgumentExtensions {
   [attributeName: string]: unknown;
 }
 
-export interface GraphQLArgumentConfig<TSource, TContext> {
+export interface GraphQLArgumentConfig<TContext> {
   description?: Maybe<string>;
   type: GraphQLInputType;
   defaultValue?: unknown;
-  resolve?: GraphQLArgumentResolver<TSource, TContext> | undefined;
+  resolve?: GraphQLArgumentResolver<TContext> | undefined;
   deprecationReason?: Maybe<string>;
   extensions?: Maybe<Readonly<GraphQLArgumentExtensions>>;
   astNode?: Maybe<InputValueDefinitionNode>;
@@ -972,7 +972,7 @@ export interface GraphQLField<TSource, TContext, TArgs = any> {
   name: string;
   description: Maybe<string>;
   type: GraphQLOutputType;
-  args: ReadonlyArray<GraphQLArgument<TSource, TContext>>;
+  args: ReadonlyArray<GraphQLArgument<TContext>>;
   resolve?: GraphQLFieldResolver<TSource, TContext, TArgs> | undefined;
   subscribe?: GraphQLFieldResolver<TSource, TContext, TArgs> | undefined;
   deprecationReason: Maybe<string>;
@@ -980,19 +980,19 @@ export interface GraphQLField<TSource, TContext, TArgs = any> {
   astNode: Maybe<FieldDefinitionNode>;
 }
 
-export interface GraphQLArgument<TSource, TContext> {
+export interface GraphQLArgument<TContext> {
   name: string;
   description: Maybe<string>;
   type: GraphQLInputType;
   defaultValue: unknown;
-  resolve?: GraphQLArgumentResolver<TSource, TContext> | undefined;
+  resolve?: GraphQLArgumentResolver<TContext> | undefined;
   deprecationReason: Maybe<string>;
   extensions: Readonly<GraphQLArgumentExtensions>;
   astNode: Maybe<InputValueDefinitionNode>;
 }
 
-export function isRequiredArgument<TSource, TContext>(
-  arg: GraphQLArgument<TSource, TContext>,
+export function isRequiredArgument<TContext>(
+  arg: GraphQLArgument<TContext>,
 ): boolean {
   return isNonNullType(arg.type) && arg.defaultValue === undefined;
 }

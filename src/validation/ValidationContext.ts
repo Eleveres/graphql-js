@@ -257,7 +257,7 @@ export class ValidationContext extends ASTValidationContext {
     return this._typeInfo.getDirective();
   }
 
-  getArgument(): Maybe<GraphQLArgument<unknown, unknown>> {
+  getArgument(): Maybe<GraphQLArgument<unknown>> {
     return this._typeInfo.getArgument();
   }
 
