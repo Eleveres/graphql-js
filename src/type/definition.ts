@@ -700,24 +700,28 @@ export interface GraphQLObjectTypeExtensions<_TSource = any, _TContext = any> {
  * });
  * ```
  */
-export class GraphQLObjectType<TSource = any, TContext = any> {
+export class GraphQLObjectType<TSource = any, TResult = any, TContext = any> {
   name: string;
   description: Maybe<string>;
   isTypeOf: Maybe<GraphQLIsTypeOfFn<TSource, TContext>>;
   extensions: Readonly<GraphQLObjectTypeExtensions<TSource, TContext>>;
   astNode: Maybe<ObjectTypeDefinitionNode>;
   extensionASTNodes: ReadonlyArray<ObjectTypeExtensionNode>;
+  validate: Maybe<GraphQLObjectValidator<TResult, TContext>>;
 
   private _fields: ThunkObjMap<GraphQLField<TSource, TContext>>;
   private _interfaces: ThunkReadonlyArray<GraphQLInterfaceType>;
 
-  constructor(config: Readonly<GraphQLObjectTypeConfig<TSource, TContext>>) {
+  constructor(
+    config: Readonly<GraphQLObjectTypeConfig<TSource, TResult, TContext>>,
+  ) {
     this.name = assertName(config.name);
     this.description = config.description;
     this.isTypeOf = config.isTypeOf;
     this.extensions = toObjMap(config.extensions);
     this.astNode = config.astNode;
     this.extensionASTNodes = config.extensionASTNodes ?? [];
+    this.validate = config.validate;
 
     this._fields = () => defineFieldMap(config);
     this._interfaces = () => defineInterfaces(config);
@@ -741,7 +745,7 @@ export class GraphQLObjectType<TSource = any, TContext = any> {
     return this._interfaces;
   }
 
-  toConfig(): GraphQLObjectTypeNormalizedConfig<TSource, TContext> {
+  toConfig(): GraphQLObjectTypeNormalizedConfig<TSource, TResult, TContext> {
     return {
       name: this.name,
       description: this.description,
@@ -765,15 +769,16 @@ export class GraphQLObjectType<TSource = any, TContext = any> {
 
 function defineInterfaces(
   config: Readonly<
-    GraphQLObjectTypeConfig<any, any> | GraphQLInterfaceTypeConfig<any, any>
+    | GraphQLObjectTypeConfig<any, any, any>
+    | GraphQLInterfaceTypeConfig<any, any>
   >,
 ): ReadonlyArray<GraphQLInterfaceType> {
   return resolveReadonlyArrayThunk(config.interfaces ?? []);
 }
 
-function defineFieldMap<TSource, TContext>(
+function defineFieldMap<TSource, TResult, TContext>(
   config: Readonly<
-    | GraphQLObjectTypeConfig<TSource, TContext>
+    | GraphQLObjectTypeConfig<TSource, TResult, TContext>
     | GraphQLInterfaceTypeConfig<TSource, TContext>
   >,
 ): GraphQLFieldMap<TSource, TContext> {
@@ -846,21 +851,23 @@ export function argsToArgsConfig<TContext>(
   );
 }
 
-export interface GraphQLObjectTypeConfig<TSource, TContext> {
+export interface GraphQLObjectTypeConfig<TSource, TResult, TContext> {
   name: string;
   description?: Maybe<string>;
   interfaces?: ThunkReadonlyArray<GraphQLInterfaceType> | undefined;
   fields: ThunkObjMap<GraphQLFieldConfig<TSource, TContext>>;
+  validate?: Maybe<GraphQLObjectValidator<TResult, TContext>>;
   isTypeOf?: Maybe<GraphQLIsTypeOfFn<TSource, TContext>>;
   extensions?: Maybe<Readonly<GraphQLObjectTypeExtensions<TSource, TContext>>>;
   astNode?: Maybe<ObjectTypeDefinitionNode>;
   extensionASTNodes?: Maybe<ReadonlyArray<ObjectTypeExtensionNode>>;
 }
 
-interface GraphQLObjectTypeNormalizedConfig<TSource, TContext>
-  extends GraphQLObjectTypeConfig<any, any> {
+interface GraphQLObjectTypeNormalizedConfig<TSource, TResult, TContext>
+  extends GraphQLObjectTypeConfig<any, any, any> {
   interfaces: ReadonlyArray<GraphQLInterfaceType>;
   fields: GraphQLFieldConfigMap<any, any>;
+  validate?: Maybe<GraphQLObjectValidator<TResult, TContext>>;
   extensions: Readonly<GraphQLObjectTypeExtensions<TSource, TContext>>;
   extensionASTNodes: ReadonlyArray<ObjectTypeExtensionNode>;
 }
@@ -889,6 +896,12 @@ export type GraphQLFieldResolver<
   context: TContext,
   info: GraphQLResolveInfo,
 ) => TResult;
+
+export type GraphQLObjectValidator<TResult, TContext> = (
+  resolved: TResult,
+  requestedFields: string[] | undefined,
+  context: TContext,
+) => void;
 
 export type GraphQLArgumentResolver<TContext, TResult = unknown> = (
   source: any,

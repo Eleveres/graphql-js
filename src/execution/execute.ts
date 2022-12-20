@@ -1014,6 +1014,28 @@ function completeValue(
 
   // If field type is Object, execute and complete all sub-selections.
   if (isObjectType(returnType)) {
+    if (returnType.validate) {
+      const validateResult = returnType.validate(
+        result,
+        fieldNodes[0].selectionSet?.selections.map((field) =>
+          'name' in field ? field.name.value : '',
+        ),
+        exeContext.contextValue,
+      );
+      if (isPromise(validateResult)) {
+        return validateResult.then(() => {
+          return completeObjectValue(
+            exeContext,
+            returnType,
+            fieldNodes,
+            info,
+            path,
+            result,
+            asyncPayloadRecord,
+          );
+        });
+      }
+    }
     return completeObjectValue(
       exeContext,
       returnType,
