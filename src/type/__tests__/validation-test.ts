@@ -1509,9 +1509,7 @@ describe('Type System: Interface fields must have output types', () => {
 });
 
 describe('Type System: Arguments must have input types', () => {
-  function schemaWithArg(
-    argConfig: GraphQLArgumentConfig<unknown>,
-  ): GraphQLSchema {
+  function schemaWithArg(argConfig: GraphQLArgumentConfig): GraphQLSchema {
     const BadObjectType = new GraphQLObjectType({
       name: 'BadObject',
       fields: {

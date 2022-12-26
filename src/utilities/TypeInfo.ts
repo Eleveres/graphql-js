@@ -45,7 +45,7 @@ export class TypeInfo {
   private _fieldDefStack: Array<Maybe<GraphQLField<unknown, unknown>>>;
   private _defaultValueStack: Array<Maybe<unknown>>;
   private _directive: Maybe<GraphQLDirective>;
-  private _argument: Maybe<GraphQLArgument<unknown>>;
+  private _argument: Maybe<GraphQLArgument>;
   private _enumValue: Maybe<GraphQLEnumValue>;
   private _getFieldDef: GetFieldDefFn;
 
@@ -127,7 +127,7 @@ export class TypeInfo {
     return this._directive;
   }
 
-  getArgument(): Maybe<GraphQLArgument<unknown>> {
+  getArgument(): Maybe<GraphQLArgument> {
     return this._argument;
   }
 

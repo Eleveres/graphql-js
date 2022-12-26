@@ -566,10 +566,10 @@ describe('Type predicates', () => {
   });
 
   describe('isRequiredArgument', () => {
-    function buildArg<TContext>(config: {
+    function buildArg(config: {
       type: GraphQLInputType;
       defaultValue?: unknown;
-    }): GraphQLArgument<TContext> {
+    }): GraphQLArgument {
       return {
         name: 'someArg',
         type: config.type,

@@ -68,8 +68,8 @@ const TestEnum = new GraphQLEnumType({
   },
 });
 
-function fieldWithInputArg<TContext>(
-  inputArg: GraphQLArgumentConfig<TContext>,
+function fieldWithInputArg(
+  inputArg: GraphQLArgumentConfig,
 ): GraphQLFieldConfig<any, any> {
   return {
     type: GraphQLString,

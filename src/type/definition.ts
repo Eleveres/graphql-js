@@ -800,9 +800,9 @@ function defineFieldMap<TSource, TResult, TContext>(
   });
 }
 
-export function defineArguments<TContext>(
-  config: GraphQLFieldConfigArgumentMap<TContext>,
-): ReadonlyArray<GraphQLArgument<TContext>> {
+export function defineArguments(
+  config: GraphQLFieldConfigArgumentMap,
+): ReadonlyArray<GraphQLArgument> {
   return Object.entries(config).map(([argName, argConfig]) => ({
     name: assertName(argName),
     description: argConfig.description,
@@ -833,9 +833,9 @@ function fieldsToFieldsConfig<TSource, TContext>(
 /**
  * @internal
  */
-export function argsToArgsConfig<TContext>(
-  args: ReadonlyArray<GraphQLArgument<TContext>>,
-): GraphQLFieldConfigArgumentMap<TContext> {
+export function argsToArgsConfig(
+  args: ReadonlyArray<GraphQLArgument>,
+): GraphQLFieldConfigArgumentMap {
   return keyValMap(
     args,
     (arg) => arg.name,
@@ -872,9 +872,9 @@ interface GraphQLObjectTypeNormalizedConfig<TSource, TResult, TContext>
   extensionASTNodes: ReadonlyArray<ObjectTypeExtensionNode>;
 }
 
-export type GraphQLTypeResolver<TSource, TContext> = (
+export type GraphQLTypeResolver<TSource, _TContext> = (
   value: TSource,
-  context: TContext,
+  context: any,
   info: GraphQLResolveInfo,
   abstractType: GraphQLAbstractType,
 ) => PromiseOrValue<string | undefined>;
@@ -887,13 +887,13 @@ export type GraphQLIsTypeOfFn<TSource, TContext> = (
 
 export type GraphQLFieldResolver<
   TSource,
-  TContext,
+  _TContext = any,
   TArgs = any,
   TResult = unknown,
 > = (
   source: TSource,
   args: TArgs,
-  context: TContext,
+  context: any,
   info: GraphQLResolveInfo,
 ) => TResult;
 
@@ -903,10 +903,7 @@ export type GraphQLObjectValidator<TResult, TContext> = (
   context: TContext,
 ) => void;
 
-export type GraphQLArgumentResolver<TContext, TResult = unknown> = (
-  source: any,
-  context: TContext,
-) => TResult;
+export type GraphQLArgumentResolver = (source: any, context: any) => void;
 
 export interface GraphQLResolveInfo {
   readonly fieldName: string;
@@ -940,7 +937,7 @@ export interface GraphQLFieldExtensions<_TSource, _TContext, _TArgs = any> {
 export interface GraphQLFieldConfig<TSource, TContext, TArgs = any> {
   description?: Maybe<string>;
   type: GraphQLOutputType;
-  args?: GraphQLFieldConfigArgumentMap<TContext> | undefined;
+  args?: GraphQLFieldConfigArgumentMap | undefined;
   resolve?: GraphQLFieldResolver<TSource, TContext, TArgs> | undefined;
   subscribe?: GraphQLFieldResolver<TSource, TContext, TArgs> | undefined;
   deprecationReason?: Maybe<string>;
@@ -950,9 +947,7 @@ export interface GraphQLFieldConfig<TSource, TContext, TArgs = any> {
   astNode?: Maybe<FieldDefinitionNode>;
 }
 
-export type GraphQLFieldConfigArgumentMap<TContext> = ObjMap<
-  GraphQLArgumentConfig<TContext>
->;
+export type GraphQLFieldConfigArgumentMap = ObjMap<GraphQLArgumentConfig>;
 
 /**
  * Custom extensions
@@ -967,11 +962,11 @@ export interface GraphQLArgumentExtensions {
   [attributeName: string]: unknown;
 }
 
-export interface GraphQLArgumentConfig<TContext> {
+export interface GraphQLArgumentConfig {
   description?: Maybe<string>;
   type: GraphQLInputType;
   defaultValue?: unknown;
-  resolve?: GraphQLArgumentResolver<TContext> | undefined;
+  resolve?: GraphQLArgumentResolver | undefined;
   deprecationReason?: Maybe<string>;
   extensions?: Maybe<Readonly<GraphQLArgumentExtensions>>;
   astNode?: Maybe<InputValueDefinitionNode>;
@@ -985,7 +980,7 @@ export interface GraphQLField<TSource, TContext, TArgs = any> {
   name: string;
   description: Maybe<string>;
   type: GraphQLOutputType;
-  args: ReadonlyArray<GraphQLArgument<TContext>>;
+  args: ReadonlyArray<GraphQLArgument>;
   resolve?: GraphQLFieldResolver<TSource, TContext, TArgs> | undefined;
   subscribe?: GraphQLFieldResolver<TSource, TContext, TArgs> | undefined;
   deprecationReason: Maybe<string>;
@@ -993,20 +988,18 @@ export interface GraphQLField<TSource, TContext, TArgs = any> {
   astNode: Maybe<FieldDefinitionNode>;
 }
 
-export interface GraphQLArgument<TContext> {
+export interface GraphQLArgument {
   name: string;
   description: Maybe<string>;
   type: GraphQLInputType;
   defaultValue: unknown;
-  resolve?: GraphQLArgumentResolver<TContext> | undefined;
+  resolve?: GraphQLArgumentResolver | undefined;
   deprecationReason: Maybe<string>;
   extensions: Readonly<GraphQLArgumentExtensions>;
   astNode: Maybe<InputValueDefinitionNode>;
 }
 
-export function isRequiredArgument<TContext>(
-  arg: GraphQLArgument<TContext>,
-): boolean {
+export function isRequiredArgument(arg: GraphQLArgument): boolean {
   return isNonNullType(arg.type) && arg.defaultValue === undefined;
 }
 
