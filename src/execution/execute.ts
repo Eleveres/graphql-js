@@ -1015,25 +1015,33 @@ function completeValue(
   // If field type is Object, execute and complete all sub-selections.
   if (isObjectType(returnType)) {
     if (returnType.validate) {
-      const validateResult = returnType.validate(
-        result,
-        fieldNodes[0].selectionSet?.selections.map((field) =>
-          'name' in field ? field.name.value : '',
-        ),
-        exeContext.contextValue,
+      const fields = fieldNodes[0].selectionSet?.selections.map((field) =>
+        'name' in field ? field.name.value : '',
       );
-      if (isPromise(validateResult)) {
-        return validateResult.then(() => {
-          return completeObjectValue(
-            exeContext,
-            returnType,
-            fieldNodes,
-            info,
-            path,
-            result,
-            asyncPayloadRecord,
-          );
-        });
+      if (fields) {
+        const requestedFields: Record<string, string[]> = {};
+        requestedFields[returnType.name] = fields;
+        if (['Query', 'Mutation'].includes(info.parentType.name)) {
+          requestedFields[info.parentType.name] = [info.fieldName];
+        }
+        const validateResult = returnType.validate(
+          result,
+          requestedFields,
+          exeContext.contextValue,
+        );
+        if (isPromise(validateResult)) {
+          return validateResult.then(() => {
+            return completeObjectValue(
+              exeContext,
+              returnType,
+              fieldNodes,
+              info,
+              path,
+              result,
+              asyncPayloadRecord,
+            );
+          });
+        }
       }
     }
     return completeObjectValue(

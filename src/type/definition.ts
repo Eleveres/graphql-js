@@ -899,7 +899,7 @@ export type GraphQLFieldResolver<
 
 export type GraphQLObjectValidator<TResult, TContext> = (
   resolved: TResult,
-  requestedFields: string[] | undefined,
+  requestedFields: Record<string, string[]>,
   context: TContext,
 ) => void;
 
