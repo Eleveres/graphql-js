@@ -247,7 +247,7 @@ describe('Execute: Handles basic execution tasks', () => {
       fields: {
         test: {
           type: GraphQLString,
-          resolve(_val, _args, _ctx, info) {
+          resolve(_val, _args, _ctx, _pending, info) {
             path = info.path;
           },
         },
@@ -1220,7 +1220,7 @@ describe('Execute: Handles basic execution tasks', () => {
     const result = executeSync({
       schema,
       document,
-      fieldResolver(_source, _args, _context, info) {
+      fieldResolver(_source, _args, _context, _pending, info) {
         // For the purposes of test, just return the name of the field!
         return info.fieldName;
       },

@@ -36,6 +36,8 @@ import type {
   UnionTypeExtensionNode,
   ValueNode,
 } from '../language/ast.js';
+
+import type { PendingQueue } from '../execution/index.js';
 import { Kind } from '../language/kinds.js';
 import { print } from '../language/printer.js';
 
@@ -894,6 +896,7 @@ export type GraphQLFieldResolver<
   source: TSource,
   args: TArgs,
   context: any,
+  pending: PendingQueue,
   info: GraphQLResolveInfo,
 ) => TResult;
 

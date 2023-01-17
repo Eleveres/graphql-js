@@ -1630,6 +1630,7 @@ describe('Introspection', () => {
       _1: any,
       _2: any,
       _3: any,
+      _4: any,
       info: GraphQLResolveInfo,
     ): never {
       expect.fail(`Called on ${info.parentType.name}::${info.fieldName}`);

@@ -282,7 +282,7 @@ export const __Type: GraphQLObjectType = new GraphQLObjectType({
       },
       possibleTypes: {
         type: new GraphQLList(new GraphQLNonNull(__Type)),
-        resolve(type, _args, _context, { schema }) {
+        resolve(type, _args, _context, _pending, { schema }) {
           if (isAbstractType(type)) {
             return schema.getPossibleTypes(type);
           }
@@ -501,7 +501,7 @@ export const SchemaMetaFieldDef: GraphQLField<unknown, unknown> = {
   type: new GraphQLNonNull(__Schema),
   description: 'Access the current type schema of this server.',
   args: [],
-  resolve: (_source, _args, _context, { schema }) => schema,
+  resolve: (_source, _args, _context, _pending, { schema }) => schema,
   deprecationReason: undefined,
   extensions: Object.create(null),
   astNode: undefined,
@@ -522,7 +522,8 @@ export const TypeMetaFieldDef: GraphQLField<unknown, unknown> = {
       astNode: undefined,
     },
   ],
-  resolve: (_source, { name }, _context, { schema }) => schema.getType(name),
+  resolve: (_source, { name }, _context, _pending, { schema }) =>
+    schema.getType(name),
   deprecationReason: undefined,
   extensions: Object.create(null),
   astNode: undefined,
@@ -533,7 +534,8 @@ export const TypeNameMetaFieldDef: GraphQLField<unknown, unknown> = {
   type: new GraphQLNonNull(GraphQLString),
   description: 'The name of the current Object type at runtime.',
   args: [],
-  resolve: (_source, _args, _context, { parentType }) => parentType.name,
+  resolve: (_source, _args, _context, _pending, { parentType }) =>
+    parentType.name,
   deprecationReason: undefined,
   extensions: Object.create(null),
   astNode: undefined,

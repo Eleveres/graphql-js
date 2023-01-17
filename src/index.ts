@@ -341,6 +341,7 @@ export type {
   IncrementalDeferResult,
   IncrementalStreamResult,
   IncrementalResult,
+  PendingQueue,
   FormattedExecutionResult,
   FormattedInitialIncrementalExecutionResult,
   FormattedSubsequentIncrementalExecutionResult,
